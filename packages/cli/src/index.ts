@@ -264,7 +264,7 @@ async function runTUI(config: Record<string, unknown>): Promise<void> {
   }
 
   // Show home screen
-  const { renderHomeScreen } = await import('@nexus-ai/tui');
+  const { renderCommandPalette } = await import('../../tui/src/components/command-palette.js');
   const homeOutput = renderHomeScreen({
     projectName: (config.project_name as string) || 'Nexus',
     version: VERSION,
