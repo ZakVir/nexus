@@ -32,10 +32,10 @@ Nexus is a CLI tool that works equally well for:
 npm install -g @nexus-ai/nexus
 
 # Or via curl
-curl -fsSL https://raw.githubusercontent.com/nexus-ai/nexus/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ZakVir/nexus/main/scripts/install.sh | bash
 
 # Or via Homebrew
-brew install nexus-ai/tap/nexus
+brew install zakvir/tap/nexus
 
 # Launch TUI
 nexus

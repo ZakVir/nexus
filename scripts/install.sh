@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Nexus installer — curl -fsSL https://raw.githubusercontent.com/nexus-ai/nexus/main/scripts/install.sh | bash
+# Nexus installer
+# Usage: curl -fsSL https://raw.githubusercontent.com/ZakVir/nexus/main/scripts/install.sh | bash
 set -euo pipefail
 
 NEXUS_VERSION="${NEXUS_VERSION:-0.1.0}"
-NEXUS_DIR="${HOME}/.nexus"
 INSTALL_DIR="${HOME}/.local/bin"
 
 # Colors
@@ -43,10 +43,10 @@ check_bun() {
   return 1
 }
 
-# Check for node
-check_node() {
-  if command -v node &>/dev/null; then
-    ok "node found: $(node --version)"
+# Check for npm
+check_npm() {
+  if command -v npm &>/dev/null; then
+    ok "npm found: $(npm --version)"
     return 0
   fi
   return 1
@@ -71,47 +71,47 @@ main() {
 
   # Check prerequisites
   if ! check_bun; then
-    if ! check_node; then
+    if ! check_npm; then
       install_bun
     fi
   fi
 
   # Create install directory
   mkdir -p "${INSTALL_DIR}"
-  mkdir -p "${NEXUS_DIR}"
 
-  # Determine install method
   PLATFORM=$(detect_platform)
   info "Platform: ${PLATFORM}"
 
-  # Try npm global install
+  # Try npm global install first
   if command -v npm &>/dev/null; then
     info "Installing via npm..."
-    npm install -g @nexus-ai/nexus 2>/dev/null && {
+    if npm install -g @nexus-ai/nexus 2>/dev/null; then
       ok "Installed via npm"
       echo ""
       ok "Run 'nexus --help' to get started"
       return 0
-    }
+    fi
+    warn "npm install failed, trying alternative methods..."
   fi
 
   # Try bun global install
   if command -v bun &>/dev/null; then
     info "Installing via bun..."
-    bun install -g @nexus-ai/nexus 2>/dev/null && {
+    if bun install -g @nexus-ai/nexus 2>/dev/null; then
       ok "Installed via bun"
       echo ""
       ok "Run 'nexus --help' to get started"
       return 0
-    }
+    fi
+    warn "bun install failed, trying alternative methods..."
   fi
 
-  # Fallback: download binary
-  info "Downloading nexus binary..."
-  local download_url="https://github.com/nexus-ai/nexus/releases/download/v${NEXUS_VERSION}/nexus-${PLATFORM}.tar.gz"
+  # Fallback: download binary from GitHub releases
+  info "Downloading nexus binary from GitHub releases..."
+  local download_url="https://github.com/ZakVir/nexus/releases/download/v${NEXUS_VERSION}/nexus-${PLATFORM}.tar.gz"
   local tmp_dir
   tmp_dir=$(mktemp -d)
-  
+
   if curl -fsSL "${download_url}" -o "${tmp_dir}/nexus.tar.gz" 2>/dev/null; then
     tar -xzf "${tmp_dir}/nexus.tar.gz" -C "${tmp_dir}"
     cp "${tmp_dir}/nexus" "${INSTALL_DIR}/nexus"
@@ -119,7 +119,15 @@ main() {
     rm -rf "${tmp_dir}"
     ok "Binary installed to ${INSTALL_DIR}/nexus"
   else
-    error "Failed to download binary. Try: npm install -g @nexus-ai/nexus"
+    warn "No binary release available yet for ${PLATFORM}"
+    echo ""
+    echo "  Install manually:"
+    echo "    npm install -g @nexus-ai/nexus"
+    echo "  Or clone and build from source:"
+    echo "    git clone https://github.com/ZakVir/nexus.git"
+    echo "    cd nexus && bun install && bun run build"
+    echo ""
+    return 1
   fi
 
   # Check if INSTALL_DIR is in PATH
