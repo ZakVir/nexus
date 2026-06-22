@@ -1,10 +1,10 @@
 {
-  "name": "@nexus-ai/nexus",
+  "name": "@nexus-ai/nexus-cli",
   "version": "0.1.0",
   "description": "Multi-model AI CLI tool for humans and agents",
   "private": false,
   "bin": {
-    "nexus": "bin/nexus"
+    "nexus-cli": "bin/nexus-cli"
   },
   "files": [
     "bin/",

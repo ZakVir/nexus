@@ -52,8 +52,8 @@ function printHelp(): void {
 Nexus v${VERSION} — Multi-model AI for humans and agents
 
 USAGE
-  nexus                          Launch TUI (interactive mode)
-  nexus setup                    Run setup wizard
+  nexus-cli                          Launch TUI (interactive mode)
+  nexus-cli setup                    Run setup wizard
   nexus --prompt TEXT             Send prompt (headless)
   nexus --pipe                    Read prompt from stdin
   nexus --print                   Print output to stdout (plain text)
@@ -90,15 +90,15 @@ EXIT CODES
 EXAMPLES
   nexus                                    # Launch TUI
   nexus setup                              # Run setup wizard
-  nexus --oneshot --prompt "2+2" --json    # Quick query (agent use)
-  echo "hello" | nexus --pipe              # Pipe prompt
-  nexus serve --mcp                        # Start MCP server
+  nexus-cli --oneshot --prompt "2+2" --json    # Quick query (agent use)
+  echo "hello" | nexus-cli --pipe              # Pipe prompt
+  nexus-cli serve --mcp                        # Start MCP server
 `);
 }
 
 // ─── Version ──────────────────────────────────────────
 function printVersion(): void {
-  console.log(`nexus v${VERSION}`);
+  console.log(`nexus-cli v${VERSION}`);
 }
 
 // ─── Ensure config exists ─────────────────────────────
