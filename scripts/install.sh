@@ -106,28 +106,27 @@ main() {
     warn "bun install failed, trying alternative methods..."
   fi
 
-  # Try Homebrew
-  if command -v brew &>/dev/null; then
-    info "Installing via Homebrew..."
-    if brew tap ZakVir/tap 2>/dev/null && brew install nexus 2>/dev/null; then
+  # Try Homebrew (only if our tap is already added)
+  if command -v brew &>/dev/null && brew list nexus-cli &>/dev/null 2>&1; then
+    info "Installing/updating via Homebrew..."
+    if brew upgrade nexus-cli 2>/dev/null; then
       ok "Installed via Homebrew"
       echo ""
-      ok "Run 'nexus --help' to get started"
+      ok "Run 'nexus-cli --help' to get started"
       return 0
     fi
-    warn "Homebrew install failed, trying alternative methods..."
   fi
   info "Downloading nexus binary from GitHub releases..."
-  local download_url="https://github.com/ZakVir/nexus/releases/download/v${NEXUS_VERSION}/nexus-${PLATFORM}.tar.gz"
+  local download_url="https://github.com/ZakVir/nexus/releases/download/v${NEXUS_VERSION}/nexus-cli-${PLATFORM}.tar.gz"
   local tmp_dir
   tmp_dir=$(mktemp -d)
 
-  if curl -fsSL "${download_url}" -o "${tmp_dir}/nexus.tar.gz" 2>/dev/null; then
-    tar -xzf "${tmp_dir}/nexus.tar.gz" -C "${tmp_dir}"
-    cp "${tmp_dir}/nexus" "${INSTALL_DIR}/nexus"
-    chmod +x "${INSTALL_DIR}/nexus"
+  if curl -fsSL "${download_url}" -o "${tmp_dir}/nexus-cli.tar.gz" 2>/dev/null; then
+    tar -xzf "${tmp_dir}/nexus-cli.tar.gz" -C "${tmp_dir}"
+    cp "${tmp_dir}/nexus-cli" "${INSTALL_DIR}/nexus-cli"
+    chmod +x "${INSTALL_DIR}/nexus-cli"
     rm -rf "${tmp_dir}"
-    ok "Binary installed to ${INSTALL_DIR}/nexus"
+    ok "Binary installed to ${INSTALL_DIR}/nexus-cli"
   else
     warn "No binary release available yet for ${PLATFORM}"
     echo ""
