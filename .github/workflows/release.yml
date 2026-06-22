@@ -1,0 +1,131 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-x64
+          - os: macos-latest
+            target: darwin-arm64
+          - os: macos-13
+            target: darwin-x64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build all packages
+        run: bun run build
+
+      - name: Bundle CLI binary
+        run: |
+          bun build packages/cli/src/index.ts --compile --outfile nexus-${{ matrix.target }} --target bun
+
+      - name: Create tarball
+        run: |
+          tar -czf nexus-${{ matrix.target }}.tar.gz nexus-${{ matrix.target }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexus-${{ matrix.target }}
+          path: nexus-${{ matrix.target }}.tar.gz
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create or update release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Nexus v${{ steps.version.outputs.version }}
+          body: |
+            ## Nexus v${{ steps.version.outputs.version }}
+
+            Multi-model AI CLI tool for humans and agents.
+
+            ### Installation
+
+            ```bash
+            # npm
+            npm install -g @nexus-ai/nexus
+
+            # curl
+            curl -fsSL https://raw.githubusercontent.com/ZakVir/nexus/main/scripts/install.sh | bash
+
+            # Homebrew
+            brew install zakvir/tap/nexus
+            ```
+
+            ### What's Included
+            - 32+ AI providers
+            - 11 tools with MCP-compatible JSON schemas
+            - 7 plugin slots
+            - 3 operating modes (Single, Multi-Model, Conversational)
+            - Theme system (OpenCode-compatible)
+          files: artifacts/*.tar.gz
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-npm:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build all packages
+        run: bun run build
+
+      - name: Publish to npm
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+          npm publish --access public
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        continue-on-error: true
