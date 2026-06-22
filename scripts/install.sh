@@ -106,7 +106,17 @@ main() {
     warn "bun install failed, trying alternative methods..."
   fi
 
-  # Fallback: download binary from GitHub releases
+  # Try Homebrew
+  if command -v brew &>/dev/null; then
+    info "Installing via Homebrew..."
+    if brew tap ZakVir/tap 2>/dev/null && brew install nexus 2>/dev/null; then
+      ok "Installed via Homebrew"
+      echo ""
+      ok "Run 'nexus --help' to get started"
+      return 0
+    fi
+    warn "Homebrew install failed, trying alternative methods..."
+  fi
   info "Downloading nexus binary from GitHub releases..."
   local download_url="https://github.com/ZakVir/nexus/releases/download/v${NEXUS_VERSION}/nexus-${PLATFORM}.tar.gz"
   local tmp_dir

@@ -35,7 +35,8 @@ npm install -g @nexus-ai/nexus
 curl -fsSL https://raw.githubusercontent.com/ZakVir/nexus/main/scripts/install.sh | bash
 
 # Or via Homebrew
-brew install zakvir/tap/nexus
+brew tap ZakVir/tap
+brew install nexus
 
 # Launch TUI
 nexus
