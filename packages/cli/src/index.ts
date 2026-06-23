@@ -41,6 +41,16 @@ const PROVIDERS: Array<{ id: string; label: string; needsKey: boolean }> = [
   { id: 'mistral', label: 'Mistral — Mixtral / Codestral', needsKey: true },
   { id: 'cohere', label: 'Cohere — Command R', needsKey: true },
   { id: 'ollama', label: 'Ollama — local models', needsKey: false },
+  { id: 'opencode-zen', label: 'OpenCode Zen — pay-as-you-go curated models', needsKey: true },
+  { id: 'opencode-go', label: 'OpenCode Go — subscription, expanded models', needsKey: true },
+  { id: 'deepseek', label: 'DeepSeek — V3 / R1, low-cost', needsKey: true },
+  { id: 'xai', label: 'xAI — Grok', needsKey: true },
+  { id: 'perplexity', label: 'Perplexity — Sonar (web-grounded)', needsKey: true },
+  { id: 'nous-portal', label: 'Nous Portal — 300+ models, bundled tools', needsKey: true },
+  { id: 'together', label: 'Together AI — open models at scale', needsKey: true },
+  { id: 'fireworks', label: 'Fireworks AI — fast open-model inference', needsKey: true },
+  { id: 'cerebras', label: 'Cerebras — ultra-fast inference', needsKey: true },
+  { id: 'deepinfra', label: 'DeepInfra — cost-effective hosting', needsKey: true },
   { id: 'custom', label: 'Custom — OpenAI-compatible endpoint', needsKey: true },
 ];
 
@@ -88,6 +98,7 @@ Nexus v${VERSION} — Multi-model AI for humans and agents
 USAGE
   nexus-cli                       Launch TUI (interactive mode)
   nexus-cli setup                 Run setup wizard
+  nexus-cli update                Update to the latest version from GitHub
   nexus-cli --prompt TEXT         Send prompt (headless)
   nexus-cli --pipe                Read prompt from stdin
   nexus-cli --print               Print output to stdout (plain text)
@@ -516,6 +527,72 @@ async function runServe(config: AnyConfig, keys: Record<string, string>): Promis
   await server.start();
 }
 
+// ─── Self-update (rebuild from source) ────────────────
+async function runUpdate(): Promise<void> {
+  const { execSync } = await import('child_process');
+  const repoDir = process.env.NEXUS_REPO_DIR || join(NEXUS_DIR, 'repo');
+  const repoUrl = process.env.NEXUS_REPO_URL || 'https://github.com/ZakVir/nexus.git';
+  const branch = process.env.NEXUS_BRANCH || 'main';
+  const sh = (cmd: string, cwd?: string) => execSync(cmd, { cwd, stdio: 'inherit' });
+  const quiet = (cmd: string) => execSync(cmd, { stdio: 'ignore' });
+
+  console.log('\n  Nexus self-update');
+  console.log('  ─────────────────────────────────────────────');
+
+  // Preconditions
+  try { quiet('git --version'); } catch { throw new NexusError('`git` is required for update.', 1); }
+  try { quiet('bun --version'); } catch { throw new NexusError('`bun` is required for update — see https://bun.sh', 1); }
+
+  // Fetch source
+  if (!existsSync(join(repoDir, '.git'))) {
+    console.log(`  Cloning ${repoUrl}`);
+    mkdirSync(repoDir, { recursive: true });
+    sh(`git clone "${repoUrl}" "${repoDir}"`);
+  } else {
+    console.log(`  Fetching latest (${repoDir})`);
+    sh('git fetch origin --prune', repoDir);
+    sh(`git reset --hard origin/${branch}`, repoDir);
+  }
+
+  // Build
+  console.log('  Installing dependencies…');
+  sh('bun install', repoDir);
+  console.log('  Compiling…');
+  sh('bun run compile', repoDir);
+
+  const built = join(repoDir, 'dist', 'nexus');
+  if (!existsSync(built)) throw new NexusError('Build did not produce dist/nexus.', 1);
+
+  // Resolve the install target (the binary to replace)
+  const baseName = (p: string) => p.split('/').pop() || p;
+  let target = process.env.NEXUS_BIN || '';
+  if (!target) {
+    if (!['bun', 'node'].includes(baseName(process.execPath))) {
+      target = process.execPath; // running as the compiled binary → replace self
+    } else {
+      try {
+        target = execSync('command -v nexus || command -v nexus-cli', { encoding: 'utf-8' }).trim();
+      } catch { /* not on PATH */ }
+      if (!target) target = join(homedir(), 'bin', 'nexus');
+    }
+  }
+
+  // Install atomically (re-sign on macOS — cp/mv breaks the ad-hoc signature)
+  console.log(`  Installing → ${target}`);
+  mkdirSync(join(target, '..'), { recursive: true });
+  const tmp = `${target}.new`;
+  execSync(`cp "${built}" "${tmp}" && chmod +x "${tmp}"`);
+  if (process.platform === 'darwin') {
+    try { quiet(`codesign --force --sign - "${tmp}"`); } catch { /* best effort */ }
+  }
+  execSync(`mv -f "${tmp}" "${target}"`);
+
+  let newVer = '';
+  try { newVer = JSON.parse(readFileSync(join(repoDir, 'package.json'), 'utf-8')).version; } catch { /* ignore */ }
+  console.log(`\n  ✓ Updated${newVer ? ` to v${newVer}` : ''} (was v${VERSION}).`);
+  console.log('  Your settings in ~/.nexus were left untouched.\n');
+}
+
 // ─── TUI runner (interactive REPL) ────────────────────
 async function runTUI(config: AnyConfig, keys: Record<string, string>): Promise<void> {
   const hasProviders = Object.values(config.providers || {}).some((p) => p?.enabled);
@@ -609,6 +686,10 @@ async function main(): Promise<void> {
 
   if (command === 'setup') {
     await runSetup();
+    process.exit(0);
+  }
+  if (command === 'update') {
+    await runUpdate();
     process.exit(0);
   }
   if (command === 'serve') {

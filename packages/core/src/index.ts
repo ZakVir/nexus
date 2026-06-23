@@ -33,6 +33,7 @@ export * from './providers/mistral.js';
 export * from './providers/cohere.js';
 export * from './providers/ollama.js';
 export * from './providers/custom.js';
+export * from './providers/openai-compatible.js';
 
 // Utilities
 export { generateProjectName } from './utils/project-name.js';

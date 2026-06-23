@@ -94,11 +94,10 @@ export class OpenRouterProvider extends BaseProvider implements Provider {
   }
 
   private toOpenAIFormat(options: CompletionOptions, stream = false): Record<string, unknown> {
-    // OpenRouter requires the full vendor-qualified model id (e.g. "deepseek/deepseek-v4-flash").
-    // Strip only a leading "openrouter/" namespace if the caller added one.
-    const modelId = options.model.replace(/^openrouter\//, '');
+    // OpenRouter requires the full vendor-qualified model id sent verbatim —
+    // e.g. "deepseek/deepseek-v4-flash" or OpenRouter's own "openrouter/owl-alpha".
     const payload: Record<string, unknown> = {
-      model: modelId,
+      model: options.model,
       messages: options.messages.map(m => ({
         role: m.role,
         content: typeof m.content === 'string' ? m.content : m.content,

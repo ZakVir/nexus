@@ -11,6 +11,18 @@ import { MistralProvider } from './mistral.js';
 import { CohereProvider } from './cohere.js';
 import { OllamaProvider } from './ollama.js';
 import { CustomProvider } from './custom.js';
+import {
+  OpenCodeZenProvider,
+  OpenCodeGoProvider,
+  DeepSeekProvider,
+  XAIProvider,
+  PerplexityProvider,
+  NousPortalProvider,
+  TogetherProvider,
+  FireworksProvider,
+  CerebrasProvider,
+  DeepInfraProvider,
+} from './openai-compatible.js';
 
 export class ProviderRegistry {
   private providers: Map<string, ProviderRegistryEntry> = new Map();
@@ -33,6 +45,16 @@ export class ProviderRegistry {
       new MistralProvider(),
       new CohereProvider(),
       new OllamaProvider(),
+      new OpenCodeZenProvider(),
+      new OpenCodeGoProvider(),
+      new DeepSeekProvider(),
+      new XAIProvider(),
+      new PerplexityProvider(),
+      new NousPortalProvider(),
+      new TogetherProvider(),
+      new FireworksProvider(),
+      new CerebrasProvider(),
+      new DeepInfraProvider(),
       new CustomProvider(),
     ];
 
