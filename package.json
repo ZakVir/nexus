@@ -14,7 +14,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "bun run build:all",
+    "build": "bun run --filter=@nexus-ai/core build && bun run --filter=@nexus-ai/headless build && bun run --filter=@nexus-ai/agent build && bun run --filter=@nexus-ai/tools build && bun run --filter=@nexus-ai/plugins build && bun run --filter=@nexus-ai/tui build && bun run --filter=@nexus-ai/cli build",
     "build:all": "bun run --filter=* build",
     "dev": "bun run --filter=@nexus-ai/cli dev",
     "test": "bun test",
