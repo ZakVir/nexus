@@ -5,6 +5,7 @@ set -euo pipefail
 
 NEXUS_VERSION="${NEXUS_VERSION:-0.1.0}"
 REPO_DIR="${HOME}/.nexus/repo"
+NEXUS_REPO_URL="${NEXUS_REPO_URL:-https://github.com/ZakVir/nexus.git}"
 
 # Colors
 RED='\033[0;31m'
@@ -68,7 +69,7 @@ main() {
     git pull --ff-only
   else
     info "Cloning Nexus CLI..."
-    git clone https://github.com/ZakVir/nexus.git "$REPO_DIR"
+    git clone "$NEXUS_REPO_URL" "$REPO_DIR"
     cd "$REPO_DIR"
   fi
 

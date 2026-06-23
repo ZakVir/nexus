@@ -6,6 +6,9 @@
   "bin": {
     "nexus-cli": "bin/nexus-cli"
   },
+  "workspaces": [
+    "packages/*"
+  ],
   "files": [
     "bin/",
     "packages/*/dist/",
@@ -16,6 +19,10 @@
   "scripts": {
     "build": "bun run --filter=@nexus-ai/core build && bun run --filter=@nexus-ai/headless build && bun run --filter=@nexus-ai/agent build && bun run --filter=@nexus-ai/tools build && bun run --filter=@nexus-ai/plugins build && bun run --filter=@nexus-ai/tui build && bun run --filter=@nexus-ai/cli build",
     "build:all": "bun run --filter=* build",
+    "compile": "bun run build && bun build --compile packages/cli/src/index.ts --outfile dist/nexus",
+    "compile:darwin-arm64": "bun run build && bun build --compile --target=bun-darwin-arm64 packages/cli/src/index.ts --outfile dist/nexus-darwin-arm64",
+    "compile:darwin-x64": "bun run build && bun build --compile --target=bun-darwin-x64 packages/cli/src/index.ts --outfile dist/nexus-darwin-x64",
+    "compile:linux-x64": "bun run build && bun build --compile --target=bun-linux-x64 packages/cli/src/index.ts --outfile dist/nexus-linux-x64",
     "dev": "bun run --filter=@nexus-ai/cli dev",
     "test": "bun test",
     "lint": "biome check .",
@@ -49,7 +56,6 @@
     "url": "https://github.com/nexus-ai/nexus"
   },
   "dependencies": {
-    "better-sqlite3": "^12.11.1",
-    "zod": "^4.4.3"
+    "zod": "^3.23.8"
   }
 }

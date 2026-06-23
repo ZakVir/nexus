@@ -1,10 +1,11 @@
-// MCP server mode — expose Nexus as an MCP server
+// MCP server mode — expose Nexus as an MCP server over stdio JSON-RPC.
+// This is the transport MCP clients (Claude Code, OpenCode, etc.) use by default.
 
-import { randomUUID } from 'crypto';
+import { runText, makeCompleteFn, ConversationalAgent } from '@nexus-ai/agent';
 
 export interface McpServerOptions {
-  port?: number;
-  host?: string;
+  config: Record<string, any>;
+  keys: Record<string, string>;
 }
 
 export interface McpTool {
@@ -16,15 +17,12 @@ export interface McpTool {
 export interface McpServer {
   start: () => Promise<void>;
   stop: () => Promise<void>;
+  handle: (request: any) => Promise<any | undefined>;
 }
 
-/**
- * Create an MCP server that exposes Nexus models as tools.
- */
-export function createMcpServer(options: McpServerOptions = {}): McpServer {
-  const { port = 3000, host = 'localhost' } = options;
+export function createMcpServer(options: McpServerOptions): McpServer {
+  const { config, keys } = options;
 
-  // Define available tools
   const tools: McpTool[] = [
     {
       name: 'nexus_complete',
@@ -35,7 +33,6 @@ export function createMcpServer(options: McpServerOptions = {}): McpServer {
           prompt: { type: 'string', description: 'The prompt to send' },
           model: { type: 'string', description: 'Model ID to use' },
           provider: { type: 'string', description: 'Provider to use' },
-          mode: { type: 'string', enum: ['single', 'multi', 'conversational'], description: 'Operating mode' },
           max_tokens: { type: 'number', description: 'Max tokens in response' },
           temperature: { type: 'number', description: 'Temperature (0-1)' },
         },
@@ -44,32 +41,33 @@ export function createMcpServer(options: McpServerOptions = {}): McpServer {
     },
     {
       name: 'nexus_models',
-      description: 'List available Nexus models',
+      description: 'List configured Nexus models',
       inputSchema: {
         type: 'object',
-        properties: {
-          provider: { type: 'string', description: 'Filter by provider' },
-        },
+        properties: { provider: { type: 'string', description: 'Filter by provider' } },
       },
     },
     {
       name: 'nexus_conversational',
-      description: 'Run a prompt through multiple models in conversational mode',
+      description: 'Run a prompt through multiple models with an orchestrator synthesis',
       inputSchema: {
         type: 'object',
         properties: {
           prompt: { type: 'string', description: 'The prompt to discuss' },
           models: { type: 'array', items: { type: 'string' }, description: 'Model IDs to include' },
           orchestrator: { type: 'string', description: 'Orchestrator model ID' },
+          provider: { type: 'string', description: 'Provider for the models' },
         },
         required: ['prompt'],
       },
     },
   ];
 
-  // MCP protocol handler
-  async function handleRequest(request: any): Promise<any> {
+  async function handleRequest(request: any): Promise<any | undefined> {
     const { method, params, id } = request;
+
+    // Notifications carry no id and expect no response.
+    if (id === undefined || id === null) return undefined;
 
     switch (method) {
       case 'initialize':
@@ -78,65 +76,40 @@ export function createMcpServer(options: McpServerOptions = {}): McpServer {
           id,
           result: {
             protocolVersion: '2024-11-05',
-            capabilities: {
-              tools: {},
-            },
-            serverInfo: {
-              name: 'nexus',
-              version: '0.1.0',
-            },
+            capabilities: { tools: {} },
+            serverInfo: { name: 'nexus', version: '0.1.0' },
           },
         };
-
       case 'tools/list':
-        return {
-          jsonrpc: '2.0',
-          id,
-          result: { tools },
-        };
-
+        return { jsonrpc: '2.0', id, result: { tools } };
       case 'tools/call':
         return await handleToolCall(params, id);
-
       default:
-        return {
-          jsonrpc: '2.0',
-          id,
-          error: { code: -32601, message: `Method not found: ${method}` },
-        };
+        return { jsonrpc: '2.0', id, error: { code: -32601, message: `Method not found: ${method}` } };
     }
   }
 
-  async function handleToolCall(params: any, id: string): Promise<any> {
-    const { name, arguments: args } = params;
-
+  async function handleToolCall(params: any, id: string | number): Promise<any> {
+    const { name, arguments: args } = params || {};
     try {
       let result: any;
-
       switch (name) {
         case 'nexus_complete':
           result = await handleComplete(args);
           break;
         case 'nexus_models':
-          result = await handleListModels(args);
+          result = handleListModels(args);
           break;
         case 'nexus_conversational':
           result = await handleConversational(args);
           break;
         default:
-          return {
-            jsonrpc: '2.0',
-            id,
-            error: { code: -32602, message: `Unknown tool: ${name}` },
-          };
+          return { jsonrpc: '2.0', id, error: { code: -32602, message: `Unknown tool: ${name}` } };
       }
-
       return {
         jsonrpc: '2.0',
         id,
-        result: {
-          content: [{ type: 'text', text: JSON.stringify(result) }],
-        },
+        result: { content: [{ type: 'text', text: typeof result === 'string' ? result : JSON.stringify(result) }] },
       };
     } catch (error) {
       return {
@@ -151,72 +124,78 @@ export function createMcpServer(options: McpServerOptions = {}): McpServer {
   }
 
   async function handleComplete(args: any): Promise<any> {
-    // Placeholder — real implementation would call the AI provider
-    return {
-      response: `Nexus received: "${args.prompt}"`,
-      model: args.model || 'default',
-      mode: args.mode || 'single',
-    };
+    const res = await runText(config as any, keys, {
+      prompt: args.prompt,
+      model: args.model,
+      provider: args.provider,
+      maxTokens: args.max_tokens,
+      temperature: args.temperature,
+    });
+    return { response: res.text, model: res.model, usage: res.usage };
   }
 
-  async function handleListModels(args: any): Promise<any> {
-    // Placeholder — real implementation would list models from providers
-    return {
-      models: [
-        { id: 'nvidia/nemotron-3-ultra-550b-a55b:free', provider: 'openrouter' },
-        { id: 'deepseek/deepseek-v4-flash', provider: 'openrouter' },
-        { id: 'xiaomi/mimo-v2.5', provider: 'openrouter' },
-      ],
-    };
+  function handleListModels(args: any): any {
+    const models: Array<{ id: string; provider: string }> = [];
+    const configured = (config.models || {}) as Record<string, string[]>;
+    for (const [provider, ids] of Object.entries(configured)) {
+      if (args?.provider && args.provider !== provider) continue;
+      for (const id of ids) models.push({ id, provider });
+    }
+    return { models };
   }
 
   async function handleConversational(args: any): Promise<any> {
-    // Placeholder — real implementation would run conversational mode
+    const provider = args.provider || Object.keys(config.providers || {})[0] || 'openrouter';
+    const modelIds: string[] = args.models && args.models.length
+      ? args.models
+      : Object.values((config.models || {}) as Record<string, string[]>).flat();
+    const orchestrator = args.orchestrator || modelIds[modelIds.length - 1];
+
+    const agent = new ConversationalAgent({
+      models: modelIds.map((id: string) => ({ id, provider })),
+      orchestratorModel: orchestrator,
+      orchestratorProvider: provider,
+      complete: makeCompleteFn(config as any, keys),
+    });
+    const responses = await agent.run(args.prompt);
+    const synthesis = responses.find((r) => r.role === 'orchestrator');
     return {
-      responses: [
-        { model: args.models?.[0] || 'default', content: 'Response from model 1' },
-        { model: args.models?.[1] || 'default', content: 'Response from model 2' },
-      ],
-      synthesis: 'Synthesized response from orchestrator',
+      responses: responses
+        .filter((r) => r.role !== 'orchestrator')
+        .map((r) => ({ model: r.model, content: r.content })),
+      synthesis: synthesis?.content ?? '',
     };
   }
 
-  // Start HTTP server
+  // ─── stdio JSON-RPC transport (newline-delimited) ───
   async function start(): Promise<void> {
-    const http = await import('http');
-    
-    const server = http.createServer(async (req, res) => {
-      if (req.method === 'POST' && req.url === '/mcp') {
-        let body = '';
-        req.on('data', (chunk) => { body += chunk; });
-        req.on('end', async () => {
-          try {
-            const request = JSON.parse(body);
-            const response = await handleRequest(request);
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify(response));
-          } catch (error) {
-            res.writeHead(400, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: 'Invalid request' }));
-          }
-        });
-      } else if (req.method === 'GET' && req.url === '/health') {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ status: 'ok', version: '0.1.0' }));
-      } else {
-        res.writeHead(404);
-        res.end('Not found');
+    process.stderr.write('Nexus MCP server ready (stdio JSON-RPC)\n');
+    let buffer = '';
+    process.stdin.setEncoding('utf-8');
+    process.stdin.on('data', async (chunk: string) => {
+      buffer += chunk;
+      let idx: number;
+      while ((idx = buffer.indexOf('\n')) >= 0) {
+        const line = buffer.slice(0, idx).trim();
+        buffer = buffer.slice(idx + 1);
+        if (!line) continue;
+        let request: any;
+        try {
+          request = JSON.parse(line);
+        } catch {
+          continue;
+        }
+        const response = await handleRequest(request);
+        if (response !== undefined) process.stdout.write(JSON.stringify(response) + '\n');
       }
     });
-
-    server.listen(port, host, () => {
-      console.log(`Nexus MCP server listening on http://${host}:${port}/mcp`);
-    });
+    // Keep the process alive until stdin closes.
+    await new Promise<void>((resolve) => process.stdin.on('end', resolve));
   }
 
   async function stop(): Promise<void> {
-    // Cleanup
+    process.stdin.pause();
   }
 
-  return { start, stop };
+  return { start, stop, handle: handleRequest };
 }

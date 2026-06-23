@@ -134,7 +134,7 @@ export function parseKey(data: Buffer): ParsedKey {
 
   if (str === '\x03') { key.name = 'c'; key.ctrl = true; return key; }
   if (str === '\x04') { key.name = 'd'; key.ctrl = true; return key; }
-  if (str === '\x1b') {
+  if (str[0] === '\x1b') {
     if (str.length === 1) { key.name = 'escape'; return key; }
     if (str === '\x1b[1;3A') { key.name = 'up'; key.meta = true; return key; }
     if (str === '\x1b[1;3B') { key.name = 'down'; key.meta = true; return key; }

@@ -3,7 +3,8 @@
 export interface ToolParameter {
   type: string;
   description?: string;
-  required?: boolean;
+  // `boolean` for a leaf flag; `string[]` for a nested object schema's required keys.
+  required?: boolean | string[];
   enum?: string[];
   default?: unknown;
   properties?: Record<string, ToolParameter>;

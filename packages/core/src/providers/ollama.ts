@@ -34,10 +34,10 @@ export class OllamaProvider extends BaseProvider implements Provider {
   async listModels(key: string): Promise<ModelInfo[]> {
     // Key is ignored for Ollama
     try {
-      const data = await this.makeRequest('/api/tags', {
+      const data = await this.makeRequest<any>('/api/tags', {
         method: 'GET',
       }, '');
-      
+
       return data.models.map((model: any) => {
         // Parse model name to extract size/info
         const nameParts = model.name.split(':');

@@ -82,7 +82,7 @@ export class GroqProvider extends BaseProvider implements Provider {
     const response = await this.makeRequest('/chat/completions', {
       method: 'POST',
       body: JSON.stringify(this.toOpenAIFormat(options)),
-    }, options.model);
+    });
 
     return this.fromOpenAIFormat(response);
   }
@@ -91,7 +91,7 @@ export class GroqProvider extends BaseProvider implements Provider {
     const response = await this.makeStreamRequest('/chat/completions', {
       method: 'POST',
       body: JSON.stringify(this.toOpenAIFormat(options, true)),
-    }, options.model);
+    });
 
     const stream = this.parseSSEStream(response);
     for await (const chunk of stream) {

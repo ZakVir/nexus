@@ -4,10 +4,10 @@ import { renderWelcomeScreen } from './components/welcome-screen.js';
 import { renderProviderSelector } from './components/provider-selector.js';
 import { renderApiKeyEntry } from './components/api-key-entry.js';
 import { renderModelListInput } from './components/model-list-input.js';
-import { generateProjectName } from '../../core/src/utils/project-name.js';
+import { generateProjectName, PROVIDER_DEFS } from '@nexus-ai/core';
+import { ansi } from './utils/ansi.js';
 import type { Theme } from './theme/index.js';
 import { defaultTheme } from './theme/index.js';
-import { PROVIDER_DEFS } from '../../core/src/providers/definitions.js';
 
 const VERSION = '0.1.0';
 
@@ -34,15 +34,15 @@ export async function runSetupWizard(theme: Theme = defaultTheme): Promise<Setup
   };
 
   // ─── Step 1: Welcome ────────────────────────────────────
-  console.log(`\n${c.primary}  Starting Nexus setup wizard...${c.reset}`);
+  console.log(`\n${c.primary}  Starting Nexus setup wizard...${ansi.reset}`);
   await renderWelcomeScreen(projectName, VERSION, theme);
 
   // ─── Step 2: Provider Selection ─────────────────────────
-  console.log(`\n${c.primary}  Step 1/4: Select providers${c.reset}`);
+  console.log(`\n${c.primary}  Step 1/4: Select providers${ansi.reset}`);
   const providerResult = await renderProviderSelector(theme);
   
   if (providerResult.leaveUnchanged) {
-    console.log(`\n${c.success}  Leaving configuration unchanged.${c.reset}`);
+    console.log(`\n${c.success}  Leaving configuration unchanged.${ansi.reset}`);
     return result;
   }
   
@@ -52,7 +52,7 @@ export async function runSetupWizard(theme: Theme = defaultTheme): Promise<Setup
   }
 
   // ─── Step 3: API Keys ──────────────────────────────────
-  console.log(`\n${c.primary}  Step 2/4: Enter API keys${c.reset}`);
+  console.log(`\n${c.primary}  Step 2/4: Enter API keys${ansi.reset}`);
   
   for (const providerId of providerResult.selectedProviders) {
     const def = PROVIDER_DEFS.find(p => p.id === providerId);
@@ -65,7 +65,7 @@ export async function runSetupWizard(theme: Theme = defaultTheme): Promise<Setup
   }
 
   // ─── Step 4: Model List Configuration ───────────────────
-  console.log(`\n${c.primary}  Step 3/4: Configure model lists${c.reset}`);
+  console.log(`\n${c.primary}  Step 3/4: Configure model lists${ansi.reset}`);
   
   const configureModels = await promptYesNo('Would you like to configure your model list?', theme);
   
@@ -82,19 +82,19 @@ export async function runSetupWizard(theme: Theme = defaultTheme): Promise<Setup
   }
 
   // ─── Step 5: Project Name ───────────────────────────────
-  console.log(`\n${c.primary}  Step 4/4: Project name${c.reset}`);
+  console.log(`\n${c.primary}  Step 4/4: Project name${ansi.reset}`);
   const customName = await promptTextInput('Your Nexus project name', projectName, theme);
   if (customName.trim()) {
     result.project_name = customName.trim();
   }
 
   // ─── Complete ───────────────────────────────────────────
-  console.log(`\n${c.success}  Setup complete ✓${c.reset}`);
+  console.log(`\n${c.success}  Setup complete ✓${ansi.reset}`);
   console.log(`\n  Providers configured:  ${Object.keys(result.providers).join(', ')}`);
   console.log(`  Models available:      ${Object.values(result.models).flat().length}`);
   console.log(`  Project name:          ${result.project_name}`);
-  console.log(`\n  Run ${c.primary}nexus${c.reset} in this directory to open the session interface.`);
-  console.log(`  Run ${c.primary}nexus --help${c.reset} to see all commands and flags.`);
+  console.log(`\n  Run ${c.primary}nexus${ansi.reset} in this directory to open the session interface.`);
+  console.log(`  Run ${c.primary}nexus --help${ansi.reset} to see all commands and flags.`);
   
   return result;
 }

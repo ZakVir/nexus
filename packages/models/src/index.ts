@@ -1,7 +1,7 @@
 // Model registry - manages model information and caching
 
 import type { ModelInfo, ModelRegistryOptions } from './types.js';
-import { providerRegistry } from '../core/src/providers/registry.js';
+import { providerRegistry } from '@nexus-ai/core';
 
 export class ModelRegistry {
   private modelCache: Map<string, ModelInfo[]> = new Map(); // providerId => models

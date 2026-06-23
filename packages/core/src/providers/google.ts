@@ -82,7 +82,7 @@ export class GoogleProvider extends BaseProvider implements Provider {
     const response = await this.makeRequest(`/models/${options.model.split('/').pop()}:generateContent`, {
       method: 'POST',
       body: JSON.stringify(this.toGoogleFormat(options)),
-    }, options.model.split('/').pop() || options.model);
+    });
 
     return this.fromGoogleFormat(response);
   }
@@ -91,7 +91,7 @@ export class GoogleProvider extends BaseProvider implements Provider {
     const response = await this.makeStreamRequest(`/models/${options.model.split('/').pop()}:streamGenerateContent`, {
       method: 'POST',
       body: JSON.stringify(this.toGoogleFormat(options, true)),
-    }, options.model.split('/').pop() || options.model);
+    });
 
     // For simplicity, we'll convert to regular response and simulate streaming
     const result = await this.complete(options);
@@ -163,7 +163,7 @@ export class GoogleProvider extends BaseProvider implements Provider {
 
     return {
       id: `google-${Date.now()}`,
-      model: `google/${options.model.split('/').pop() || options.model}`,
+      model: `google/${data.modelVersion || 'unknown'}`,
       choices: [{
         index: 0,
         message: {

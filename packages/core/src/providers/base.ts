@@ -12,6 +12,7 @@ export abstract class BaseProvider implements Provider {
   default_base_url?: string;
 
   protected baseUrl: string;
+  protected apiKey = '';
   protected headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
@@ -22,6 +23,18 @@ export abstract class BaseProvider implements Provider {
 
   setBaseUrl(url: string): void {
     this.baseUrl = url;
+  }
+
+  setApiKey(key: string): void {
+    this.apiKey = key;
+  }
+
+  /**
+   * Auth headers for a request. Defaults to OpenAI-style Bearer auth.
+   * Providers with a different scheme (e.g. Anthropic's x-api-key) override this.
+   */
+  protected authHeaders(key: string): Record<string, string> {
+    return key ? { Authorization: `Bearer ${key}` } : {};
   }
 
   setHeaders(headers: Record<string, string>): void {
@@ -36,15 +49,18 @@ export abstract class BaseProvider implements Provider {
   protected async makeRequest<T>(
     endpoint: string,
     options: RequestInit,
-    key: string
+    key?: string
   ): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
+    const authKey = key ?? this.apiKey;
+    // baseUrl may be unset until after subclass field initializers run, so fall
+    // back to default_base_url (a subclass field) at request time.
+    const url = `${this.baseUrl || this.default_base_url || ''}${endpoint}`;
     const response = await fetch(url, {
       ...options,
       headers: {
         ...this.headers,
+        ...this.authHeaders(authKey),
         ...options.headers,
-        'Authorization': `Bearer ${key}`,
       },
     });
 
@@ -59,15 +75,16 @@ export abstract class BaseProvider implements Provider {
   protected async makeStreamRequest(
     endpoint: string,
     options: RequestInit,
-    key: string
+    key?: string
   ): Promise<Response> {
-    const url = `${this.baseUrl}${endpoint}`;
+    const authKey = key ?? this.apiKey;
+    const url = `${this.baseUrl || this.default_base_url || ''}${endpoint}`;
     const response = await fetch(url, {
       ...options,
       headers: {
         ...this.headers,
+        ...this.authHeaders(authKey),
         ...options.headers,
-        'Authorization': `Bearer ${key}`,
       },
     });
 

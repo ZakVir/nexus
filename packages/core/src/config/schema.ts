@@ -5,7 +5,7 @@ import type { NexusConfig, OperatingMode, ProviderConfig, AgentConfig, Conversat
 
 export const OperatingModeSchema = z.enum(['single', 'multi', 'conversational']);
 
-export const ProviderConfigSchema: z.ZodType<ProviderConfig> = z.object({
+export const ProviderConfigSchema = z.object({
   enabled: z.boolean(),
   base_url: z.string().url().optional(),
   custom_headers: z.record(z.string()).optional(),
@@ -19,7 +19,7 @@ export const AgentRoleConfigSchema = z.object({
   max_tokens: z.number().int().positive().optional(),
 });
 
-export const AgentConfigSchema: z.ZodType<AgentConfig> = z.object({
+export const AgentConfigSchema = z.object({
   orchestrator: AgentRoleConfigSchema,
   coder: AgentRoleConfigSchema.optional(),
   researcher: AgentRoleConfigSchema.optional(),
@@ -28,29 +28,29 @@ export const AgentConfigSchema: z.ZodType<AgentConfig> = z.object({
   analyst: AgentRoleConfigSchema.optional(),
 });
 
-export const ConversationalConfigSchema: z.ZodType<ConversationalConfig> = z.object({
+export const ConversationalConfigSchema = z.object({
   models: z.array(z.string().min(1)).min(1),
   orchestrator: z.string().min(1),
   parallel: z.boolean(),
   system_prompts: z.record(z.string()).optional(),
 });
 
-export const KeybindConfigSchema: z.ZodType<KeybindConfig> = z.object({
+export const KeybindConfigSchema = z.object({
   leader: z.string().default('ctrl+x'),
 });
 
-export const TUIConfigSchema: z.ZodType<TUIConfig> = z.object({
+export const TUIConfigSchema = z.object({
   prompt_max_width: z.union([z.number().int().positive(), z.literal('auto')]).default('auto'),
   sidebar: z.enum(['auto', 'always', 'never']).default('auto'),
   diff_style: z.enum(['auto', 'inline', 'side-by-side']).default('auto'),
 });
 
-export const HeadlessConfigSchema: z.ZodType<HeadlessConfig> = z.object({
+export const HeadlessConfigSchema = z.object({
   default_output: z.enum(['text', 'json', 'markdown']).default('json'),
   timeout: z.number().int().positive().default(120),
 });
 
-export const NexusConfigSchema: z.ZodType<NexusConfig> = z.object({
+export const NexusConfigSchema = z.object({
   version: z.number().int().positive().default(1),
   project_name: z.string().min(1).max(50),
   mode: OperatingModeSchema.default('single'),

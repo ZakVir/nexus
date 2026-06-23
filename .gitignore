@@ -27,3 +27,6 @@ coverage/
 # Logs
 *.log
 npm-debug.log*
+# Design-skill cache (local only)
+.impeccable/
+tsconfig.tsbuildinfo

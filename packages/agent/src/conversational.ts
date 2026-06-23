@@ -1,6 +1,7 @@
 // Conversational agent — models discuss together, orchestrator synthesizes
 
 import type { AgentMessage } from './types.js';
+import type { CompleteFn } from './engine.js';
 
 export interface ConversationalAgentOptions {
   models: Array<{
@@ -10,20 +11,20 @@ export interface ConversationalAgentOptions {
   }>;
   orchestratorModel: string;
   orchestratorProvider: string;
-  providers: Map<string, { complete: (prompt: string, options?: any) => Promise<string> }>;
+  complete: CompleteFn;
 }
 
 export class ConversationalAgent {
   private models: ConversationalAgentOptions['models'];
   private orchestratorModel: string;
   private orchestratorProvider: string;
-  private providers: ConversationalAgentOptions['providers'];
+  private complete: CompleteFn;
 
   constructor(options: ConversationalAgentOptions) {
     this.models = options.models;
     this.orchestratorModel = options.orchestratorModel;
     this.orchestratorProvider = options.orchestratorProvider;
-    this.providers = options.providers;
+    this.complete = options.complete;
   }
 
   /**
@@ -35,14 +36,16 @@ export class ConversationalAgent {
 
     // Step 1: All models respond in parallel
     const modelPromises = this.models.map(async (model) => {
-      const provider = this.providers.get(model.provider);
-      if (!provider) return null;
-
       const systemPrompt = model.systemPrompt || this.getDefaultSystemPrompt(model.id);
-      const fullPrompt = `${systemPrompt}\n\nThe user asked: ${prompt}\n\nPlease give your independent analysis. Do not repeat what others have said — your response will be merged.`;
+      const userPrompt = `The user asked: ${prompt}\n\nPlease give your independent analysis. Do not repeat what others have said — your response will be merged.`;
 
       try {
-        const content = await provider.complete(fullPrompt, { model: model.id });
+        const content = await this.complete({
+          prompt: userPrompt,
+          model: model.id,
+          provider: model.provider,
+          system: systemPrompt,
+        });
         return {
           role: 'analyst' as const,
           model: model.id,
@@ -67,11 +70,14 @@ export class ConversationalAgent {
     }
 
     // Step 2: Orchestrator synthesizes
-    const orchestratorProvider = this.providers.get(this.orchestratorProvider);
-    if (orchestratorProvider) {
+    {
       const synthesisPrompt = this.buildSynthesisPrompt(prompt, responses);
       try {
-        const synthesis = await orchestratorProvider.complete(synthesisPrompt, { model: this.orchestratorModel });
+        const synthesis = await this.complete({
+          prompt: synthesisPrompt,
+          model: this.orchestratorModel,
+          provider: this.orchestratorProvider,
+        });
         responses.push({
           role: 'orchestrator',
           model: this.orchestratorModel,

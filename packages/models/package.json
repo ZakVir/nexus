@@ -1,7 +1,7 @@
 {
-  "name": "@nexus-ai/agent",
+  "name": "@nexus-ai/models",
   "version": "0.1.0",
-  "description": "Nexus agent - orchestrator, multi-model, conversational modes",
+  "description": "Nexus model registry - model info and caching",
   "type": "module",
   "main": "src/index.ts",
   "module": "src/index.ts",
@@ -11,8 +11,6 @@
   },
   "scripts": {
     "build": "bun build src/index.ts --outdir dist --external @nexus-ai/* --splitting",
-    "dev": "bun --watch src/index.ts",
-    "test": "bun test",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

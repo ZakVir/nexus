@@ -91,7 +91,7 @@ export class NVIDIAProvider extends BaseProvider implements Provider {
     const response = await this.makeRequest('/chat/completions', {
       method: 'POST',
       body: JSON.stringify(this.toOpenAIFormat(options)),
-    }, options.model.split('/').pop() || options.model);
+    });
 
     return this.fromOpenAIFormat(response);
   }
@@ -100,7 +100,7 @@ export class NVIDIAProvider extends BaseProvider implements Provider {
     const response = await this.makeStreamRequest('/chat/completions', {
       method: 'POST',
       body: JSON.stringify(this.toOpenAIFormat(options, true)),
-    }, options.model.split('/').pop() || options.model);
+    });
 
     const stream = this.parseSSEStream(response);
     for await (const chunk of stream) {
@@ -124,7 +124,7 @@ export class NVIDIAProvider extends BaseProvider implements Provider {
     if (options.tools) payload.tools = options.tools;
     if (options.tool_choice) payload.tool_choice = options.tool_choice;
     if (options.stop) payload.stop = options.stop;
-    if (options.system) payload.messages.unshift({ role: 'system', content: options.system });
+    if (options.system) (payload.messages as Array<Record<string, unknown>>).unshift({ role: 'system', content: options.system });
 
     return payload;
   }

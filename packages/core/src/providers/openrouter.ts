@@ -43,10 +43,10 @@ export class OpenRouterProvider extends BaseProvider implements Provider {
       return this.modelCache;
     }
     
-    const data = await this.makeRequest('/models', {
+    const data = await this.makeRequest<any>('/models', {
       method: 'GET',
     }, key);
-    
+
     this.modelCache = data.data.map((model: any) => ({
       id: model.id,
       name: model.name || model.id,
@@ -76,7 +76,7 @@ export class OpenRouterProvider extends BaseProvider implements Provider {
     const response = await this.makeRequest('/chat/completions', {
       method: 'POST',
       body: JSON.stringify(this.toOpenAIFormat(options)),
-    }, options.model.split('/').pop() || options.model);
+    });
 
     return this.fromOpenAIFormat(response);
   }
@@ -85,7 +85,7 @@ export class OpenRouterProvider extends BaseProvider implements Provider {
     const response = await this.makeStreamRequest('/chat/completions', {
       method: 'POST',
       body: JSON.stringify(this.toOpenAIFormat(options, true)),
-    }, options.model.split('/').pop() || options.model);
+    });
 
     const stream = this.parseSSEStream(response);
     for await (const chunk of stream) {
@@ -94,8 +94,11 @@ export class OpenRouterProvider extends BaseProvider implements Provider {
   }
 
   private toOpenAIFormat(options: CompletionOptions, stream = false): Record<string, unknown> {
+    // OpenRouter requires the full vendor-qualified model id (e.g. "deepseek/deepseek-v4-flash").
+    // Strip only a leading "openrouter/" namespace if the caller added one.
+    const modelId = options.model.replace(/^openrouter\//, '');
     const payload: Record<string, unknown> = {
-      model: options.model.split('/').pop() || options.model,
+      model: modelId,
       messages: options.messages.map(m => ({
         role: m.role,
         content: typeof m.content === 'string' ? m.content : m.content,
@@ -109,7 +112,7 @@ export class OpenRouterProvider extends BaseProvider implements Provider {
     if (options.tools) payload.tools = options.tools;
     if (options.tool_choice) payload.tool_choice = options.tool_choice;
     if (options.stop) payload.stop = options.stop;
-    if (options.system) payload.messages.unshift({ role: 'system', content: options.system });
+    if (options.system) (payload.messages as Array<Record<string, unknown>>).unshift({ role: 'system', content: options.system });
 
     return payload;
   }

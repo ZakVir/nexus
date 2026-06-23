@@ -1,20 +1,21 @@
 // Multi-model runner — coordinates multiple AI models
 
-import type { AgentConfig, AgentMessage, TaskDecomposition } from './types.js';
+import type { AgentMessage } from './types.js';
 import { Orchestrator } from './orchestrator.js';
+import type { CompleteFn } from './engine.js';
 
 export interface MultiModelRunnerOptions {
   orchestrator: Orchestrator;
-  providers: Map<string, { complete: (prompt: string, options?: any) => Promise<string> }>;
+  complete: CompleteFn;
 }
 
 export class MultiModelRunner {
   private orchestrator: Orchestrator;
-  private providers: Map<string, { complete: (prompt: string, options?: any) => Promise<string> }>;
+  private complete: CompleteFn;
 
   constructor(options: MultiModelRunnerOptions) {
     this.orchestrator = options.orchestrator;
-    this.providers = options.providers;
+    this.complete = options.complete;
   }
 
   /**
@@ -29,15 +30,14 @@ export class MultiModelRunner {
       const agentConfig = this.orchestrator.getAgentForRole(subtask.role);
       if (!agentConfig) continue;
 
-      const provider = this.providers.get(agentConfig.provider);
-      if (!provider) continue;
-
       const systemPrompt = agentConfig.systemPrompt || this.getDefaultSystemPrompt(subtask.role);
-      const fullPrompt = `${systemPrompt}\n\nUser request: ${subtask.prompt}`;
 
       try {
-        const content = await provider.complete(fullPrompt, {
+        const content = await this.complete({
+          prompt: subtask.prompt,
           model: agentConfig.model,
+          provider: agentConfig.provider,
+          system: systemPrompt,
           temperature: agentConfig.temperature,
           maxTokens: agentConfig.maxTokens,
         });

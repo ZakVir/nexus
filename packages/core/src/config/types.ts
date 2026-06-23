@@ -8,8 +8,8 @@ export interface NexusConfig {
   providers: Record<string, ProviderConfig>;
   models: Record<string, string[]>;
   model_aliases: Record<string, string>;
-  agents: AgentConfig;
-  conversational: ConversationalConfig;
+  agents?: AgentConfig;
+  conversational?: ConversationalConfig;
   keybinds: KeybindConfig;
   tui: TUIConfig;
   headless: HeadlessConfig;

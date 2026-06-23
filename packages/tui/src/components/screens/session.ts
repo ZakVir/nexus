@@ -39,6 +39,7 @@ export interface SessionScreenProps {
   promptPlaceholder?: string;
   modeLabel?: string;
   cwd: string;
+  model: string;
   modelCount: number;
   theme?: Theme;
 }

@@ -117,6 +117,8 @@ export interface Provider {
   default_base_url?: string;
   
   // Methods
+  setBaseUrl(url: string): void;
+  setApiKey(key: string): void;
   validateKey(key: string): Promise<{ valid: boolean; error?: string }>;
   listModels(key: string): Promise<ModelInfo[]>;
   complete(options: CompletionOptions): Promise<CompletionResponse>;

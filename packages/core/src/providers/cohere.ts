@@ -91,7 +91,7 @@ export class CohereProvider extends BaseProvider implements Provider {
     const response = await this.makeRequest('/chat', {
       method: 'POST',
       body: JSON.stringify(this.toCohereFormat(options)),
-    }, options.model);
+    });
 
     return this.fromCohereFormat(response);
   }
@@ -100,7 +100,7 @@ export class CohereProvider extends BaseProvider implements Provider {
     const response = await this.makeStreamRequest('/chat', {
       method: 'POST',
       body: JSON.stringify(this.toCohereFormat(options, true)),
-    }, options.model);
+    });
 
     // Cohere streaming is different, we'll simulate for now
     const result = await this.complete(options);

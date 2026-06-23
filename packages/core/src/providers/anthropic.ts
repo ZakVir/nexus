@@ -19,6 +19,13 @@ export class AnthropicProvider extends BaseProvider implements Provider {
   };
   default_base_url = 'https://api.anthropic.com';
 
+  // Anthropic uses x-api-key + anthropic-version headers, not Bearer auth.
+  protected authHeaders(key: string): Record<string, string> {
+    return key
+      ? { 'x-api-key': key, 'anthropic-version': '2023-06-01' }
+      : {};
+  }
+
   private modelMap: Record<string, ModelInfo> = {
     'claude-3-opus-20240229': {
       id: 'claude-3-opus-20240229',
@@ -87,7 +94,7 @@ export class AnthropicProvider extends BaseProvider implements Provider {
     const response = await this.makeRequest('/v1/messages', {
       method: 'POST',
       body: JSON.stringify(this.toAnthropicFormat(options)),
-    }, options.model.split('/').pop() || options.model);
+    });
 
     return this.fromAnthropicFormat(response);
   }
@@ -96,7 +103,7 @@ export class AnthropicProvider extends BaseProvider implements Provider {
     const response = await this.makeStreamRequest('/v1/messages', {
       method: 'POST',
       body: JSON.stringify(this.toAnthropicFormat(options, true)),
-    }, options.model.split('/').pop() || options.model);
+    });
 
     const stream = this.parseSSEStream(response);
     for await (const chunk of stream) {

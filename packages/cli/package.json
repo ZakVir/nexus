@@ -2,18 +2,15 @@
   "name": "@nexus-ai/cli",
   "version": "0.1.0",
   "description": "Nexus CLI - entry point, arg parsing, surface detection",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "type": "module",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "types": "src/index.ts",
   "bin": {
-    "nexus-cli": "dist/index.js"
+    "nexus-cli": "src/index.ts"
   },
   "exports": {
-    ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    }
+    ".": "./src/index.ts"
   },
   "scripts": {
     "build": "bun build src/index.ts --outdir dist --target=node --external @nexus-ai/*",
@@ -25,7 +22,8 @@
     "@nexus-ai/core": "workspace:*",
     "@nexus-ai/tui": "workspace:*",
     "@nexus-ai/headless": "workspace:*",
-    "@nexus-ai/agent": "workspace:*"
+    "@nexus-ai/agent": "workspace:*",
+    "@nexus-ai/session": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.5.5",

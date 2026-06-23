@@ -3,8 +3,8 @@
 import { homedir } from 'os';
 import { join } from 'path';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { NexusConfig, DEFAULT_CONFIG, validateConfig, mergeConfig } from './schema.js';
-import type { ProjectNameData } from './types.js';
+import { DEFAULT_CONFIG, validateConfig, mergeConfig } from './schema.js';
+import type { NexusConfig } from './types.js';
 
 const CONFIG_DIR = join(homedir(), '.nexus');
 const CONFIG_FILE = join(CONFIG_DIR, 'config.json');

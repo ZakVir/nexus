@@ -1,7 +1,20 @@
 // Core types and exports for Nexus
 
 // Configuration
-export * from './config/types.js';
+// Note: ProviderConfig is re-exported from ./providers/types.js (identical shape)
+// to avoid an ambiguous duplicate export.
+export type {
+  NexusConfig,
+  OperatingMode,
+  AgentConfig,
+  AgentRoleConfig,
+  ConversationalConfig,
+  KeybindConfig,
+  TUIConfig,
+  HeadlessConfig,
+  CLIArgs,
+  ProjectNameData,
+} from './config/types.js';
 export * from './config/schema.js';
 export * from './config/manager.js';
 

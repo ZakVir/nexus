@@ -1,7 +1,7 @@
 {
-  "name": "@nexus-ai/headless",
+  "name": "@nexus-ai/session",
   "version": "0.1.0",
-  "description": "Nexus headless interface - JSON streaming, --print, --pipe, --oneshot",
+  "description": "Nexus session store - persistence via bun:sqlite",
   "type": "module",
   "main": "src/index.ts",
   "module": "src/index.ts",
@@ -10,9 +10,6 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "build": "bun build src/index.ts --outdir dist --splitting",
-    "dev": "bun --watch src/index.ts",
-    "test": "bun test",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {},
